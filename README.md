@@ -62,7 +62,7 @@ Assuming that the primary disk is ada0 and we have 4 additional disks (ada1, ada
 gpart destroy -F ada1
 ```
 (The same for ada2, ada3, and ada4)
-Then, we create a gpt partition tables.
+Then, we create gpt partition tables.
 ```bash
 gpart create -s gpt ada1
 ```
@@ -130,7 +130,7 @@ We create a new profile and force it to use IPv4 addressing.
 # For client1 "192.168.50.10/24" and for client2 "192.168.50.11/24"
 sudo nmcli connection add type ethernet con-name static-enp0s8 ifname enp0s8 ipv4.method manual ipv4.addresses 192.168.50.10/24 ipv6.method ignore
 ```
-We activate the profile and check if it is up and with a correct address.
+We activate the profile and check if it is up, with a correct address.
 ```bash
 sudo nmcli connection up static-enp0s8
 
@@ -138,7 +138,7 @@ ip a
 ```
 
 ## Main ZFS Pool Test
-With server and both clients running we can perform the final test. We connect both clients to the server via SSH.
+With server and both clients running, we can perform the final test. We connect both clients to the server via SSH.
 ```bash
 # On client1 vm
 ssh user1@192.168.50.1
