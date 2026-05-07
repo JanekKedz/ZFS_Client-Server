@@ -4,7 +4,7 @@ This is the complete guide to recreating a virtual system consisting of a ZFS se
 ## Hardware requirements
 This setup requires:
 * Preferably 6 spendable CPU cores (minimum of 3)
-* 30GB of free disk space for systems + disk space for zfs storage (at least 4GB)
+* 30GB of free disk space for systems + disk space for zfs storage (e.g. 4 x 1GB)
 * Preferably 12GB of RAM
 
 ## Software requirements
@@ -89,9 +89,17 @@ zfs snapshot testpool/testds@base_state
 # A clone for the second user
 zfs clone testpool/testds@base_state testpool/testds2
 ```
-Finally, we add ownerships to the users
+We add ownerships to the users
 ```bash
 chown -R user1 /testpool/testds
 
 chown -R user2 /testpool/testds2
+```
+Finally, we configure the internal interface (assuming it's called em1). We modify the /etc/rc.conf file:
+```bash
+ee /etc/rc.conf
+```
+by appending the following line to it:
+```
+ifconfig_em1="inet 192.168.50.1 netmask 255.255.255.0"
 ```
