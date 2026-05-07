@@ -8,9 +8,9 @@ This setup requires:
 * Preferably 12GB of RAM
 
 ## Software requirements
-* Oracle VirtualBox 7.2.8
-* Ubuntu Desktop 26.04 .iso image
-* FreeBSD 15.0 .iso image
+* [Oracle VirtualBox 7.2.8](https://www.virtualbox.org/wiki/Downloads)
+* [Ubuntu Desktop 26.04 .iso image](https://ubuntu.com/download/desktop)
+* [FreeBSD 15.0 .iso image](https://www.freebsd.org/where/)
 
 ## VirtualBox Configuration 
 ### Server
