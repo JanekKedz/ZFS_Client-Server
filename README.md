@@ -45,6 +45,8 @@ As in the server config, we finish the initial configurtion and right-click on t
 * In storage: .iso image (under Controller: IDE), VDI disk (under Controller: SATA)
 * In Network: add a second adapter Internal Network with the same name as in the server VM
 
+Repeat the process for the second client.
+
 ## FreeBSD Server installation and configuration
 ### Installation
 We launch the server VM and perform mostly default installation with the exception of:
