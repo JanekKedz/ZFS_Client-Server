@@ -52,6 +52,7 @@ Repeat the process for the second client.
 We launch the server VM and perform mostly default installation with the exception of:
 * UFS on the primary 10GB disk
 * We add two non-root users for the clients to log into (e.g. user1, user2)
+
 Now we can shut down the machine, remove the .iso from storage settings and boot the vm from the primary disk.
 
 ### ZFS Configuration
