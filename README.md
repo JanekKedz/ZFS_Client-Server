@@ -159,6 +159,105 @@ Finally, we check the outcome of the modifications on both datasets.
 # On server vm
 zfs list -o name,used,refer,written testpool/testds testpool/testds2
 ```
+## Internal Backup Setup
+To create a periodic backup mechanism we need to add new disks, create a pool, write a script to automate the process, and add it to Cron Daemon which runs scripts periodically.
+
+### New disks and a backup pool
+We perform very similar steps as in ZFS Configuration. In this case, I use 2 additional 10GB virtual disks (ada5, ada6).
+
+```bash
+gpart destroy -F ada5
+
+gpart create -s gpt ada5
+
+gpart add -a 4k -t freebsd-zfs -l zdisk5 ada5
+```
+And, the same for 'ada6'.
+
+Then, we create a 'backuppool' pool as 2 disks mirrored for data redundancy. 
+
+```bash
+zpool create backuppool mirror gpt/zdisk5 gpt/zdisk6
+```
+### Backup Script
+We create a shell script 'copy.sh' in the root directory and give it a right to execute
+```bash
+touch /root/copy.sh
+chmod +x /root/copy.sh
+```
+The script is designed to check for the older snapshot both on the source "testpool" and on the destination "backuppool", and delete them to keep the backup drives operational. If the older backup exists, the script updates the backup incrementally in the destination.
+
+```bash
+#!/bin/sh
+
+# Check if 'backuppool is online
+if ! zpool status backuppool > /dev/null 2>&1; then
+    echo "ERROR: 'backuppool' is unavailable."
+    exit 1
+fi
+
+# MAIN FUNCTION
+backup_dataset() {
+    SOURCE=$1
+    DEST=$2
+
+    # Generate a timestamp
+    TIMESTAMP="backup_$(date +%Y%m%d_%H%M%S)"
+    NEW_SNAP="${SOURCE}@${TIMESTAMP}"
+
+    # Look for the older snapshot on source
+    OLD_SNAP=$(zfs list -t snapshot -o name -H -d 1 ${SOURCE} 2>/dev/null | grep "@backup_" | tail -n 1)
+
+    echo "Init backup: ${SOURCE} -> ${DEST}"
+    
+    # Take the new snapshot
+    zfs snapshot ${NEW_SNAP}
+
+    # If OLD_SNAP is empty, this is the first run
+    if [ -z "${OLD_SNAP}" ]; then
+        echo "  -> Initial sync..."
+        zfs send ${NEW_SNAP} | zfs receive -F ${DEST}
+    else
+        echo "  -> Incremental sync..."
+        zfs send -i ${OLD_SNAP} ${NEW_SNAP} | zfs receive -F ${DEST}
+        
+
+        # Destroy the old snapshot on source
+        zfs destroy ${OLD_SNAP}
+        
+	      # And the one on destination
+        zfs destroy ${DEST}@${OLD_SNAP##*@} 
+    fi
+    
+    echo "  -> Backup complete for ${SOURCE}."
+    echo "------------------------------------------------"
+}
+
+# EXEC
+echo "Backup at $(date +%Y%m%d_%H%M%S)"
+backup_dataset "testpool/testds" "backuppool/user1_backup"
+backup_dataset "testpool/testds2" "backuppool/user2_backup"
+
+echo "All backup operations finished successfully."
+```
+We can test this script using the following commands:
+```bash
+# Execute
+./root/copy.sh
+
+# List the snapshots
+zfs list -t snapshot
+```
+
+### Cron Table Update
+To register the script in the Cron Daemon, we need to modify the crontab file where we can assign any amount of time between the script runs. Lets assign a daily backup procedure, and let the output be saved to "var/log/my_backup.log". We open the file in an editor:
+```bash
+ee /etc/crontab
+```
+Next, append this line to it:
+```bash
+0  1  *  *  *  root  /root/copy.sh >> /var/log/my_backup.log 2>&1
+```
 
 ## Conclusions
 If the configuration and test were performed correctly, in the output of the last command we should see that out of 270M referred only 170M is actually used by the system. This means that the shared data is not physically copied and the newly modified data is stored separately in a new location.
