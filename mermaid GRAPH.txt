@@ -1,0 +1,38 @@
+graph LR
+    subgraph VirtualBox ["VirtualBox [Network: 192.168.50.0/24]"]
+        subgraph Server [FreeBSD Server<br>IP: 192.168.50.1]
+            D0[(ada0: UFS Boot Drive)]
+            
+            subgraph MainPool ["Main ZFS Pool: 'testpool' (RAIDZ)"]
+                D1[(ada1)] --- D2[(ada2)] --- D3[(ada3)] --- D4[(ada4)]
+                DS1[Dataset: testds<br>Owner: user1]
+                DS2[Dataset: testds2<br>Owner: user2]
+            end
+
+            subgraph BackupPool ["Backup ZFS Pool: 'backuppool' (Mirror)"]
+                D5[(ada5)] --- D6[(ada6)]
+                B1[Dataset: user1_backup]
+                B2[Dataset: user2_backup]
+            end
+            
+            CRON((Cron daemon)) -- Run copy.sh daily --> Script[[copy.sh]]
+            Check{Do previous local snapshots already exist?}
+            Initial[Perform Initial Sync]
+            Incremental[Perform Incremental Sync]
+        end
+
+        subgraph Clients [Ubuntu Clients]
+            C1[vmClient1<br>IP: 192.168.50.10]
+            C2[vmClient2<br>IP: 192.168.50.11]
+        end
+    end
+
+    C1 -- SSH Access --> DS1
+    C2 -- SSH Access --> DS2
+
+    Script -- "Create local snapshots (per user)" --> MainPool
+    Script --> Check
+    Check -- Yes --> Incremental
+    Check -- No --> Initial
+    Initial --> BackupPool
+    Incremental --> BackupPool
